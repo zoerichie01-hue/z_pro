@@ -38,9 +38,12 @@ jobs:
           build-tools: 33.0.2
 
       - name: Decode keystore from secret
-        if: ${{ secrets.ANDROID_KEYSTORE != '' }}
         run: |
-          echo "$ANDROID_KEYSTORE" | base64 --decode > release.keystore
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            echo "$ANDROID_KEYSTORE" | base64 --decode > release.keystore
+          else
+            echo "ANDROID_KEYSTORE is empty; skipping keystore decode"
+          fi
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
 

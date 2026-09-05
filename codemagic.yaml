@@ -1,0 +1,36 @@
+workflows:
+  build_android:
+    name: Build Android AAB
+    max_build_duration: 120
+    environment:
+      vars:
+        ANDROID_KEYSTORE:    # Set in Codemagic environment (base64)
+          value: ''
+        KEYSTORE_PASSWORD:
+          value: ''
+        KEY_ALIAS:
+          value: ''
+        KEY_PASSWORD:
+          value: ''
+    scripts:
+      - name: Prepare keystore
+        script: |
+          if [ -z "$ANDROID_KEYSTORE" ]; then
+            echo "ANDROID_KEYSTORE is not set"; exit 1
+          fi
+          echo "$ANDROID_KEYSTORE" | base64 --decode > release.keystore
+          cat > android-project/signing.properties <<EOF
+storeFile=
+storePassword=$KEYSTORE_PASSWORD
+keyAlias=$KEY_ALIAS
+keyPassword=$KEY_PASSWORD
+EOF
+          # place keystore next to signing.properties
+          mv release.keystore android-project/release.keystore
+      - name: Build bundle
+        script: |
+          cd android-project
+          chmod +x ./gradlew || true
+          ./gradlew bundleRelease --no-daemon
+    artifacts:
+      - android-project/app/build/outputs/bundle/release/*.aab
